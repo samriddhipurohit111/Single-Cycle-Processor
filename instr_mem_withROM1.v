@@ -1,0 +1,55 @@
+`timescale 1ns / 1ps
+
+module instr_mem (
+    input  wire        clk,
+    input  wire [31:0] read_add,
+    output wire [31:0] instr_out
+);
+
+    /////////////////////////////////////////////////////////////
+    // Internal Signals
+    /////////////////////////////////////////////////////////////
+
+    wire [15:0] q_low;
+    wire [15:0] q_high;
+    wire [8:0]  rom_addr;
+
+    /////////////////////////////////////////////////////////////
+    // Word Aligned Address
+    // 512 words → 9-bit address
+    /////////////////////////////////////////////////////////////
+
+    assign rom_addr = read_add[10:2];
+
+    /////////////////////////////////////////////////////////////
+    // Active-Low Chip Enable (Always Enabled)
+    /////////////////////////////////////////////////////////////
+
+    wire cen;
+    assign cen = 1'b0;
+
+    /////////////////////////////////////////////////////////////
+    // ROM Instantiations (32-bit = 2 × 16-bit)
+    /////////////////////////////////////////////////////////////
+
+    rom_512x16A ROM_LOW (
+        .CLK (clk),
+        .CEN (cen),
+        .A   (rom_addr),
+        .Q   (q_low)
+    );
+
+    rom_512x16A ROM_HIGH (
+        .CLK (clk),
+        .CEN (cen),
+        .A   (rom_addr),
+        .Q   (q_high)
+    );
+
+    /////////////////////////////////////////////////////////////
+    // Combine to 32-bit Instruction
+    /////////////////////////////////////////////////////////////
+
+    assign instr_out = {q_high, q_low};
+
+endmodule
